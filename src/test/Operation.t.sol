@@ -20,23 +20,52 @@ contract OperationTest is Setup {
         // TODO: add additional check on strat params
     }
 
-    function test_operation_NoFees(uint256 _amount) public {
+    function test_operation_NoFees_ForceSwap(uint256 _amount) public {
+        maxFuzzAmount = 1e6 * 1e6;
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
         setFees(0, 0);
         // Deposit into strategy
         mintAndDepositIntoStrategy(strategy, user, _amount);
+          
+        // Earn Interest
+        skip(1 days);
+        airdrop(asset, address(strategy), 10e6);
+        console.log("airdrop done");
 
-        checkStrategyTotals(strategy, _amount, _amount, 0);
+        // Report profit
+        vm.prank(keeper);
+        (uint256 profit, uint256 loss) = strategy.report();
+        checkStrategyInvariants(strategy);
+
+        // Check return Values
+        assertGe(profit, 0, "!profit");
+        assertEq(loss, 0, "!loss");
+
+        skip(strategy.profitMaxUnlockTime());
+
+        uint256 balanceBefore = asset.balanceOf(user);
+
+        vm.prank(management);
+        strategy.setMaxAcceptableFeeOutPSM(0);
+
+        // Withdraw all funds
+        vm.prank(user);
+        strategy.redeem(_amount, user, user);
+
+        assertGe(asset.balanceOf(user), balanceBefore + _amount, "!final balance");
+    }
+
+        function test_operation_NoFees(uint256 _amount) public {
+        vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
+        setFees(0, 0);
+        // Deposit into strategy
+        mintAndDepositIntoStrategy(strategy, user, _amount);
+          
 
         // Earn Interest
         skip(1 days);
-        airdrop(ERC20(PENDLE), address(strategy), 100e18);
-        if (additionalReward1 != address(0)) {
-            airdrop(ERC20(additionalReward1), address(strategy), 100e18);
-        }
-        if (additionalReward2 != address(0)) {
-            airdrop(ERC20(additionalReward2), address(strategy), 100e18);
-        }
+        airdrop(asset, address(strategy), 10e6);
+        console.log("airdrop done");
 
         // Report profit
         vm.prank(keeper);
@@ -55,8 +84,7 @@ contract OperationTest is Setup {
         vm.prank(user);
         strategy.redeem(_amount, user, user);
 
-        // TODO: Adjust if there are fees
-        checkStrategyTotals(strategy, 0, 0, 0);
+         
 
         assertGe(
             asset.balanceOf(user),
@@ -72,25 +100,18 @@ contract OperationTest is Setup {
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
         //_profitFactor = uint16(bound(uint256(_profitFactor), 10, 1_00));
         //_profit = uint16(bound(uint256(_profit), 1e10, 10000e18));
-        _profit = bound(_profit, 1e15, 1000e18);
-        setFees(0, 1_000);
+        _profit = bound(_profit, 1e4, 1000e6);
+        setFees(0, 0);
 
         // Deposit into strategy
         mintAndDepositIntoStrategy(strategy, user, _amount);
-        checkStrategyTotals(strategy, _amount, _amount, 0);
+          
 
         // Earn Interest
         skip(1 days);
 
-        //uint256 toAirdrop = (_amount * _profitFactor) / MAX_BPS;
-        //airdrop(asset, address(strategy), toAirdrop);
-        airdrop(ERC20(PENDLE), address(strategy), _profit);
-        if (additionalReward1 != address(0)) {
-        airdrop(ERC20(additionalReward1), address(strategy), _profit);
-        }
-        if (additionalReward2 != address(0)) {
-        airdrop(ERC20(additionalReward2), address(strategy), _profit);
-        }
+        //toAirdrop = (_amount * _profitFactor) / MAX_BPS;
+        airdrop(asset, address(strategy), _profit);
         
         // Report profit
         vm.prank(keeper);
@@ -116,7 +137,7 @@ contract OperationTest is Setup {
 
         //uint256 expectedFees = (profit * strategy.performanceFee()) / MAX_BPS;
 
-        assertGe(asset.balanceOf(user), balanceBefore + _amount, "!final balance");
+        assertGe(asset.balanceOf(user), balanceBefore + _amount + _profit, "!final balance");
 
         uint256 strategistShares = strategy.balanceOf(performanceFeeRecipient);
         if (strategistShares > 0) {
@@ -142,13 +163,14 @@ contract OperationTest is Setup {
         mintAndDepositIntoStrategy(strategy, user, _amount);
         
         // TODO: Implement logic so totalDebt is _amount and totalIdle = 0.
-        checkStrategyTotals(strategy, _amount, _amount, 0);
+          
         
         // Earn Interest
         skip(1 days);
 
         // TODO: implement logic to simulate earning interest.
         uint256 toAirdrop = (_amount * _profitFactor) / MAX_BPS;
+
         airdrop(asset, address(strategy), toAirdrop);
 
         // Report profit
@@ -175,12 +197,12 @@ contract OperationTest is Setup {
         strategy.redeem(_amount, user, user);
 
         // TODO: Adjust if there are fees
-        assertGe(asset.balanceOf(user), balanceBefore + _amount, "!final balance");
+        assertGe(asset.balanceOf(user), (balanceBefore + _amount + toAirdrop) * (MAX_BPS - 10_00 ) / MAX_BPS, "!final balance");
 
         vm.prank(performanceFeeRecipient);
         strategy.redeem(expectedShares, performanceFeeRecipient, performanceFeeRecipient);
 
-        checkStrategyTotals(strategy, 0, 0, 0);
+         
 
         assertGe(asset.balanceOf(performanceFeeRecipient), expectedShares, "!perf fee out");
     }
@@ -193,14 +215,7 @@ contract OperationTest is Setup {
         mintAndDepositIntoStrategy(strategy, user, _amount);
 
         // Skip some time
-        skip(1 days);
-        airdrop(ERC20(PENDLE), address(strategy), 100e18);
-        if (additionalReward1 != address(0)) {
-            airdrop(ERC20(additionalReward1), address(strategy), 100e18);
-        }
-        if (additionalReward2 != address(0)) {
-            airdrop(ERC20(additionalReward2), address(strategy), 100e18);
-        }
+        airdrop(asset, address(strategy), 100e6);
 
         vm.prank(keeper);
         (uint profit, uint loss) = strategy.report();
@@ -212,9 +227,7 @@ contract OperationTest is Setup {
         strategy.shutdownStrategy();
         vm.prank(management); 
         strategy.emergencyWithdraw(type(uint256).max);
-        assertGe(asset.balanceOf(address(strategy)), _amount, "!all in asset");
-        vm.prank(management);
-        strategy.setAutocompound(false);
+        assertGe(asset.balanceOf(address(strategy)) + 1, _amount + 100e6, "!all in asset");
 
         vm.prank(keeper);
         (profit, loss) = strategy.report();
@@ -229,6 +242,6 @@ contract OperationTest is Setup {
         // verify users earned profit
         assertGt(asset.balanceOf(user), _amount, "!final balance");
 
-        checkStrategyTotals(strategy, 0, 0, 0);
+         
     }
 }

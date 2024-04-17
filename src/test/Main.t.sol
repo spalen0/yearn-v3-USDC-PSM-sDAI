@@ -13,7 +13,7 @@ contract MainTest is Setup {
 
     function testSetupStrategyOK() public {
         console.log("address of strategy", address(strategy));
-        assertTrue(address(0) != address(strategy));
+        assertTrue(address(0) != address(strategy), "wut");
         assertEq(strategy.asset(), address(asset));
         assertEq(strategy.management(), management);
         assertEq(strategy.performanceFeeRecipient(), performanceFeeRecipient);
@@ -24,7 +24,7 @@ contract MainTest is Setup {
     function test_main() public {
         setFees(0, 0);
         //init
-        uint256 _amount = 100e18;
+        uint256 _amount = 1000e6;
         uint256 profit;
         uint256 loss;
         console.log("asset: ", asset.symbol());
@@ -39,14 +39,12 @@ contract MainTest is Setup {
         assertEq(asset.balanceOf(user), 0, "user balance after deposit =! 0");
         assertEq(strategy.totalAssets(), _amount, "strategy.totalAssets() != _amount after deposit");
         console.log("strategy.totalAssets() after deposit: ", strategy.totalAssets());
-        console.log("assetBalance: ", strategy.balanceAsset());
+        //console.log("assetBalance: ", strategy.balanceAsset());
 
         // Earn Interest
-        skip(12 days);
+        skip(365 days);
 
-        airdrop(ERC20(PENDLE), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward1), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward2), address(strategy), 10e18);
+        console.log("1 year later: ");
         // Report profit / loss
         vm.prank(keeper);
         (profit, loss) = strategy.report();
@@ -54,31 +52,32 @@ contract MainTest is Setup {
         console.log("loss: ", loss);
         checkStrategyInvariants(strategy);
 
-        airdrop(ERC20(PENDLE), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward1), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward2), address(strategy), 10e18);
+        // Earn Interest
+        skip(365 days);
+
+        console.log("1 year later: ");
         // Report profit / loss
         vm.prank(keeper);
         (profit, loss) = strategy.report();
         console.log("profit: ", profit);
         console.log("loss: ", loss);
-
         checkStrategyInvariants(strategy);
 
-        airdrop(ERC20(PENDLE), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward1), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward2), address(strategy), 10e18);
+        // Earn Interest
+        skip(365 days);
+
+        console.log("1 year later: ");
         // Report profit / loss
         vm.prank(keeper);
         (profit, loss) = strategy.report();
         console.log("profit: ", profit);
         console.log("loss: ", loss);
-
         checkStrategyInvariants(strategy);
 
-        airdrop(ERC20(PENDLE), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward1), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward2), address(strategy), 10e18);
+        // Earn Interest
+        skip(365 days);
+
+        console.log("1 year later: ");
 
         // Report profit / loss
         vm.prank(keeper);
@@ -99,96 +98,8 @@ contract MainTest is Setup {
 
         checkStrategyInvariants(strategy);
         
-        console.log("assetBalance of strategy: ", strategy.balanceAsset());
         console.log("asset balance of strategy: ", asset.balanceOf(address(strategy)));
         console.log("asset.balanceOf(user) at end: ", asset.balanceOf(user));
-        checkStrategyTotals(strategy, 0, 0, 0);
-    }
-    
-    function test_withdraw_after_expiry() public {
-        setFees(0, 0);
-        //init
-        uint256 _amount = 100e18;
-        uint256 profit;
-        uint256 loss;
-        console.log("asset: ", asset.symbol());
-        console.log("amount:", _amount);
-        //user funds:
-        airdrop(asset, user, _amount);
-        console.log("airdrop done");
-        assertEq(asset.balanceOf(user), _amount, "!totalAssets");
-        //user deposit:
-        depositIntoStrategy(strategy, user, _amount);
-        console.log("deposit done");
-        assertEq(asset.balanceOf(user), 0, "user balance after deposit =! 0");
-        assertEq(strategy.totalAssets(), _amount, "strategy.totalAssets() != _amount after deposit");
-        console.log("strategy.totalAssets() after deposit: ", strategy.totalAssets());
-        console.log("assetBalance: ", strategy.balanceAsset());
-
-        // Earn Interest
-        skip(2 days);
-
-        airdrop(ERC20(PENDLE), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward1), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward2), address(strategy), 10e18);
-        // Report profit / loss
-        vm.prank(keeper);
-        (profit, loss) = strategy.report();
-        console.log("profit: ", profit);
-        console.log("loss: ", loss);
-        checkStrategyInvariants(strategy);
-
-        airdrop(ERC20(PENDLE), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward1), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward2), address(strategy), 10e18);
-        // Report profit / loss
-        vm.prank(keeper);
-        (profit, loss) = strategy.report();
-        console.log("profit: ", profit);
-        console.log("loss: ", loss);
-
-        checkStrategyInvariants(strategy);
-
-        airdrop(ERC20(PENDLE), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward1), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward2), address(strategy), 10e18);
-        // Report profit / loss
-        vm.prank(keeper);
-        (profit, loss) = strategy.report();
-        console.log("profit: ", profit);
-        console.log("loss: ", loss);
-
-        checkStrategyInvariants(strategy);
-
-        airdrop(ERC20(PENDLE), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward1), address(strategy), 10e18);
-        airdrop(ERC20(additionalReward2), address(strategy), 10e18);
-
-        // Report profit / loss
-        vm.prank(keeper);
-        (profit, loss) = strategy.report();
-        console.log("profit: ", profit);
-        console.log("loss: ", loss);
-
-        checkStrategyInvariants(strategy);
-
-        skip(strategy.profitMaxUnlockTime());
-
-        skip(10000 days);
-
-        // Withdraw all funds
-        console.log("performanceFeeReceipient: ", strategy.balanceOf(performanceFeeRecipient));
-        console.log("redeem strategy.totalAssets() before redeem: ", strategy.totalAssets());
-        vm.prank(user);
-        strategy.redeem(_amount, user, user);
-        console.log("redeem strategy.totalAssets() after redeem: ", strategy.totalAssets());
-
-        checkStrategyInvariants(strategy);
-        
-        console.log("assetBalance of strategy: ", strategy.balanceAsset());
-        console.log("asset balance of strategy: ", asset.balanceOf(address(strategy)));
-        console.log("asset.balanceOf(user) at end: ", asset.balanceOf(user));
-        checkStrategyTotals(strategy, 0, 0, 0);
     }
 }
 

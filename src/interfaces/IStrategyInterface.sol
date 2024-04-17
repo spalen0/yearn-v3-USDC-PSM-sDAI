@@ -9,20 +9,11 @@ interface IStrategyInterface is IStrategy {
         address _strategy
     ) external view returns (bool, bytes memory);
 
-    function sweep(address _token) external;
-
     function balanceAsset() external view returns (uint256);
-    function balanceStaked() external view returns (uint256);
+    function balanceSDAI() external view returns (uint256);
 
-    function addReward(address _rewardToken, uint24 _feeRewardTokenToBase) external;
     function setProfitLimitRatio(uint256) external;
+    function setDepositLimit(uint256) external;
     function setDoHealthCheck(bool) external;
-    function setAutocompound(bool) external;
-    function setMinAmountToSellMapping(address, uint256) external;
-    function setRouterParams(uint256 _guessMin, uint256 _guessMax, uint256 _maxIteration, uint256 _eps) external;
-
-    function isExpired() external view returns (bool);
-
-    function setTradeFactory(address, bool) external;
-    function claimRewards() external;
+    function setMaxAcceptableFeeOutPSM(uint256) external;
 }
