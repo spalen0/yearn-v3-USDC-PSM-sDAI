@@ -1,6 +1,6 @@
-# Pendle LP Compounder Strategy for yearn V3
+# USDC PSM sDAI Strategy for yearn V3
 
-yearn v3 strategy that autocompounds Pendle LP positions.
+yearn v3 strategy that trade USDC through PSM and farms sDAI.
 
 ### Requirements
 
