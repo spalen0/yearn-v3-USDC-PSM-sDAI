@@ -4,6 +4,8 @@ import {BaseHealthCheck, ERC20} from "@periphery/Bases/HealthCheck/BaseHealthChe
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {UniswapV3Swapper} from "@periphery/swappers/UniswapV3Swapper.sol";
+import {IPSM} from "./interfaces/IPSM.sol";
+import {ISDAI} from "./interfaces/ISDAI.sol";
 
 /// @title yearn-v3-USDC-PSM-sDAI
 /// @author mil0x
@@ -42,7 +44,7 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
     //////////////////////////////////////////////////////////////*/
 
     function availableDepositLimit(address /*_owner*/) public view override returns (uint256) {
-        if (IPSM(PSM).tin() == 0 && IPSM(PSM).tout() == 0) { //only allow deposits if fee in and fee out are 0
+        if (IPSM(PSM).tin() == 0 && IPSM(PSM).tout() == 0) { //only allow deposits if PSM fee in and fee out are 0
             return depositLimit;
         } else {
             return 0;
@@ -50,14 +52,13 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
     }
 
     function _deployFunds(uint256 _amount) internal override {
-        IPSM(PSM).sellGem(address(this), _amount);
+        IPSM(PSM).sellGem(address(this), _amount); //swap USDC --> DAI 1:1 through PSM (in USDC amount)
         ISDAI(SDAI).deposit(_balanceDAI(), address(this));
     }
 
     function _freeFunds(uint256 _amount) internal override {
         //Redeem sDAI shares proportional to the strategy shares redeemed:
-        uint256 totalAssets = TokenizedStrategy.totalAssets();
-        uint256 totalDebt = totalAssets - _balanceAsset();
+        uint256 totalDebt = TokenizedStrategy.totalAssets() - _balanceAsset();
         uint256 sharesToRedeem = _balanceSDAI() * _amount / totalDebt;
         _uninvest(sharesToRedeem);
     }
@@ -65,26 +66,27 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
     function _uninvest(uint256 _amount) internal {
         if (_amount == 0) return;
         //SDAI --> DAI
-        _amount = ISDAI(SDAI).redeem(_amount, address(this), address(this));
-        if (IPSM(PSM).tout() >= maxAcceptableFeeOutPSM) {
-            _swapFrom(DAI, address(asset), _amount, _amount * (MAX_BPS - swapSlippageBPS) / MAX_BPS / SCALER);
+        _amount = ISDAI(SDAI).redeem(_amount, address(this), address(this)); //SDAI --> DAI
+        if (IPSM(PSM).tout() >= maxAcceptableFeeOutPSM) { //if PSM fee is not 0
+            _swapFrom(DAI, address(asset), _amount, _amount * (MAX_BPS - swapSlippageBPS) / MAX_BPS / SCALER); //swap DAI --> USDC through Uniswap (in DAI amount)
         } else {
-            IPSM(PSM).buyGem(address(this), _amount / SCALER); //buyGem in USDC amount
-            //we have satisfied USDC withdrawal at this point 
+            IPSM(PSM).buyGem(address(this), _amount / SCALER); //swap DAI --> USDC 1:1 through PSM (in USDC amount)
             //due to the need for USDC decimals in buyGem we can have DAI leftover up to the size of the decimal mismatch of 1e11
-            //so we deposit the leftover DAI back into SDAI
-            _amount = _balanceDAI();
-            if (_amount > 0) {
-                ISDAI(SDAI).deposit(_balanceDAI(), address(this));
-            }
+            //it will be redeposited in the next report
         }
     }
 
     function _harvestAndReport() internal override returns (uint256 _totalAssets) {
-        uint256 assetBalance = _balanceAsset();
-            if (assetBalance > 0) {
-                _deployFunds(assetBalance);
-            }
+        uint256 currentBalance = _balanceAsset();
+        if (currentBalance > 0) {
+            IPSM(PSM).sellGem(address(this), currentBalance); //swap USDC --> DAI 1:1 through PSM (in USDC amount)
+        }
+
+        currentBalance = _balanceDAI();
+        if (currentBalance > 0) {
+            ISDAI(SDAI).deposit(currentBalance, address(this)); //DAI --> SDAI
+        }
+
         _totalAssets = _balanceAsset() + ISDAI(SDAI).convertToAssets(_balanceSDAI()) / SCALER;
     }
 
@@ -127,20 +129,4 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
         }
         _uninvest(_amount);
     }
-}
-
-interface IPSM {
-    function gemJoin() external view returns (address);
-    function sellGem(address usr, uint256 gemAmt) external;
-    function buyGem(address usr, uint256 gemAmt) external;
-    function tin() external view returns(uint256);
-    function tout() external view returns(uint256);
-}
-
-interface ISDAI {
-    function deposit(uint256 assets, address receiver) external;
-    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
-    function withdraw(uint256 assets, address receiver, address owner) external;
-    function convertToAssets(uint256 shares) external view returns (uint256);
-    function convertToShares(uint256 assets) external view returns (uint256);
 }

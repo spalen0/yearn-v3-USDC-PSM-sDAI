@@ -146,7 +146,7 @@ contract Setup is ExtendedTest, IEvents {
     }
 
     function checkStrategyInvariants(IStrategyInterface _strategy) public {
-        assertLe(ERC20(DAI).balanceOf(address(_strategy)), 10, "DAI balance > DUST");
+        assertLe(ERC20(DAI).balanceOf(address(_strategy)), 1e12, "DAI balance > DUST");
     }
 
     function airdrop(ERC20 _asset, address _to, uint256 _amount) public {
