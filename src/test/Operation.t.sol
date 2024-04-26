@@ -393,19 +393,19 @@ contract OperationTest is Setup {
         redeemAmount = strategy.balanceOf(user);
         if (redeemAmount > 0){
             vm.prank(user);
-            strategy.redeem(redeemAmount, user, user, 50);
+            strategy.redeem(redeemAmount, user, user, 5);
             checkStrategyInvariantsAfterRedeem(strategy);
         }
         redeemAmount = strategy.balanceOf(secondUser);
         if (redeemAmount > 0){
             vm.prank(secondUser);
-            strategy.redeem(redeemAmount, secondUser, secondUser, 50);
+            strategy.redeem(redeemAmount, secondUser, secondUser, 5);
             checkStrategyInvariantsAfterRedeem(strategy);
         }
         redeemAmount = strategy.balanceOf(thirdUser);
         if (redeemAmount > 0){
             vm.prank(thirdUser);
-            strategy.redeem(redeemAmount, thirdUser, thirdUser, 50);
+            strategy.redeem(redeemAmount, thirdUser, thirdUser, 5);
             checkStrategyInvariantsAfterRedeem(strategy);
         }
         // verify users earned profit
