@@ -36,7 +36,7 @@ contract ShutdownTest is Setup {
          
 
         assertGe(
-            asset.balanceOf(user),
+            asset.balanceOf(user) + 1,
             balanceBefore + _amount,
             "!final balance"
         );

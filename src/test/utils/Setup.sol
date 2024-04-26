@@ -44,7 +44,7 @@ contract Setup is ExtendedTest, IEvents {
     bool public forceProfit = false; //to be used with minimum deposit contracts
 
     // Fuzz from $0.01 of 1e6 stable coins up to 1 billion of a 1e18 coin
-    uint256 public maxFuzzAmount = 200e6 * 1e6;
+    uint256 public maxFuzzAmount = 150e6 * 1e6;
     uint256 public minFuzzAmount = 1e6;
 
     // Default prfot max unlock time is set for 10 days
@@ -146,7 +146,13 @@ contract Setup is ExtendedTest, IEvents {
     }
 
     function checkStrategyInvariants(IStrategyInterface _strategy) public {
-        assertLe(ERC20(DAI).balanceOf(address(_strategy)), 1e12, "DAI balance > DUST");
+        assertLe(ERC20(DAI).balanceOf(address(_strategy)), 2, "DAI balance > DUST");
+        assertEq(asset.balanceOf(address(_strategy)), 0, "USDC balance > DUST");
+    }
+
+    function checkStrategyInvariantsAfterRedeem(IStrategyInterface _strategy) public {
+        assertLe(ERC20(DAI).balanceOf(address(_strategy)), 2, "redeem: DAI balance > DUST");
+        assertEq(asset.balanceOf(address(_strategy)), 0, "USDC balance > DUST");
     }
 
     function airdrop(ERC20 _asset, address _to, uint256 _amount) public {

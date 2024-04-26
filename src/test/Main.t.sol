@@ -100,6 +100,8 @@ contract MainTest is Setup {
         
         console.log("asset balance of strategy: ", asset.balanceOf(address(strategy)));
         console.log("asset.balanceOf(user) at end: ", asset.balanceOf(user));
+
+        checkStrategyTotals(strategy, 0, 0, 0);
     }
 }
 

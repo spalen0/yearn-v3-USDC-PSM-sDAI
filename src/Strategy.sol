@@ -67,30 +67,20 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
 
     function availableWithdrawLimit(address /*_owner*/) public view override returns (uint256) {
         if (IPSM(PSM).tout() >= maxAcceptableFeeOutPSM) {
-            return asset.balanceOf(pool);
+            return _balanceAsset() + asset.balanceOf(pool);
         } else {
-            return asset.balanceOf(gemJoin);
+            return _balanceAsset() + asset.balanceOf(gemJoin);
         }
     }
 
     function _freeFunds(uint256 _amount) internal override {
-        //Redeem sDAI shares proportional to the strategy shares redeemed:
-        uint256 totalDebt = TokenizedStrategy.totalAssets() - _balanceAsset();
-        uint256 sharesToRedeem = _balanceSDAI() * _amount / totalDebt;
-        _uninvest(sharesToRedeem);
-    }
-
-    function _uninvest(uint256 _amount) internal {
-        if (_amount == 0) return;
-        //SDAI --> DAI
-        _amount = ISDAI(SDAI).redeem(_amount, address(this), address(this)); //SDAI --> DAI
+        uint256 amountDAI = _amount * SCALER;
+        ISDAI(SDAI).withdraw(amountDAI, address(this), address(this)); //SDAI --> DAI
         uint256 feeOut = IPSM(PSM).tout(); //in WAD
         if (feeOut >= maxAcceptableFeeOutPSM) { //if PSM fee is not 0
-            _swapFrom(DAI, address(asset), _amount, _amount * (MAX_BPS - swapSlippageBPS) / MAX_BPS / SCALER); //swap DAI --> USDC through Uniswap (in DAI amount)
+            _swapFrom(DAI, address(asset), amountDAI, _amount * (MAX_BPS - swapSlippageBPS) / MAX_BPS); //swap DAI --> USDC through Uniswap (in DAI amount)
         } else {
-            IPSM(PSM).buyGem(address(this), _amount * (WAD - feeOut) / SCALER / WAD); //swap DAI --> USDC 1:1 through PSM (in USDC amount). Need to account for fees that will be added on top & USDC decimals.
-            //due to the need for USDC decimals in buyGem we can have DAI leftover up to the size of the decimal mismatch of 1e11
-            //it will be redeposited in the next report
+            IPSM(PSM).buyGem(address(this), _amount * WAD / (WAD + feeOut)); //swap DAI --> USDC 1:1 through PSM (in USDC amount). Need to account for fees that will be added on top.
         }
     }
 
@@ -150,6 +140,26 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
         if (_amount > currentBalance) {
             _amount = currentBalance;
         }
-        _uninvest(_amount);
+        _freeFunds(ISDAI(SDAI).convertToAssets(_amount) / SCALER);
+    }
+
+    /// @notice If possible, always call emergencyWithdraw() instead of this. This function is to be called only if emergencyWithdraw() were to ever revert: In that case, management needs to first shutdown the strategy, then call emergencyWithdrawDirect() with off-chain calculated amounts, and then immediately call a report.
+    /// @param _sharesSDAI the amount of sDAI shares that should be redeemed.
+    /// @param _usePSM Set this to true to use the PSM to swap (preferred). Otherwise this will use Uniswap to swap (emergency).
+    /// @param _swapAmount For the PSM this is the USDC amount out. For Uniswap this is the DAI amount to be swapped to USDC out.
+    function emergencyWithdrawDirect(uint256 _sharesSDAI, bool _usePSM, uint256 _swapAmount) external onlyManagement {
+        if (_sharesSDAI > 0) {
+            uint256 currentBalance = _balanceSDAI();
+            if (_sharesSDAI > currentBalance) {
+                _sharesSDAI = currentBalance;
+            }
+            ISDAI(SDAI).redeem(_sharesSDAI, address(this), address(this));
+        }
+        if (_swapAmount == 0) return;
+        if (_usePSM) {
+            IPSM(PSM).buyGem(address(this), _swapAmount); //swapAmount in USDC out
+        } else {
+            _swapFrom(DAI, address(asset), _swapAmount, _swapAmount * (MAX_BPS - swapSlippageBPS) / MAX_BPS / SCALER);
+        }
     }
 }
