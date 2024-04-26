@@ -29,7 +29,7 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
     constructor(address _asset, string memory _name) BaseHealthCheck(_asset, _name) {
         depositLimit = 100e6 * 1e6; //100M USDC deposit limit to start with
         //use setMaxAcceptableFeeOutPSM(0) to force swap through Uniswap
-        maxAcceptableFeeOutPSM = 5e16 + 1; //0.05% expressed in WAD. If the PSM fee out is equal or bigger than this amount, it is probably better to swap through the uniswap pool, accepting slippage.
+        maxAcceptableFeeOutPSM = 5e14 + 1; //0.05% expressed in WAD. If the PSM fee out is equal or bigger than this amount, it is probably better to swap through the uniswap pool, accepting slippage.
         swapSlippageBPS = 50; //0.5% expressed in BPS. Allow a slippage of 0.5% for swapping through uniswap.
 
         // Set uni swapper values

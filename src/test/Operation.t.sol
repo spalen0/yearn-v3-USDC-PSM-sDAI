@@ -384,7 +384,7 @@ contract OperationTest is Setup {
         address maker = 0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB;
         address PSM = 0x89B78CfA322F6C5dE0aBcEecab66Aee45393cC5A;
         vm.prank(maker);
-        IPSMfee(PSM).file("tout", 100000000000000000); //add extreme feeOut of 10%
+        IPSMfee(PSM).file("tout", 1e17); //add extreme feeOut of 10%
 
         // withdraw all funds
         console.log("user shares: ", strategy.balanceOf(user));
