@@ -19,7 +19,7 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
     
     address private constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address private constant SDAI = 0x83F20F44975D03b1b09e64809B757c47f942BEeA;
-    address private constant PSM = 0x89B78CfA322F6C5dE0aBcEecab66Aee45393cC5A;
+    address private constant PSM = 0xf6e72Db5454dd049d0788e411b06CfAF16853042; //LITE-PSM
     address private constant gemJoin = 0x0A59649758aa4d66E25f08Dd01271e891fe52199;
     address private constant pool = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
     
