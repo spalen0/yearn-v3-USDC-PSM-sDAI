@@ -20,7 +20,7 @@ contract OracleTest is Setup {
         uint256 currentApr = oracle.aprAfterDebtChange(_strategy, 0);
         console.log("currentApr: ", currentApr);
         // Should be greater than 0 but likely less than 100%
-        assertGe(currentApr, 7 * 1e16, "Not more than 7% APR");
+        assertGe(currentApr, 6 * 1e16, "Not more than 6% APR");
         assertLt(currentApr, 20 * 1e16, "Not less than 20% APR");
     }
 

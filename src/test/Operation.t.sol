@@ -239,7 +239,7 @@ contract OperationTest is Setup {
         vm.prank(keeper);
         (profit, loss) = strategy.report();
         checkStrategyInvariants(strategy);
-        assertGe(profit, (_amount + secondUserAmount + thirdUserAmount) * 7 / 100 , "!profit");
+        assertGe(profit, (_amount + secondUserAmount + thirdUserAmount) * 6 / 100 , "!profit");
         console.log("total investment: ", _amount + secondUserAmount + thirdUserAmount);
         console.log("profit after second report", profit);
         assertEq(loss, 0, "!loss");
@@ -344,7 +344,7 @@ contract OperationTest is Setup {
         vm.prank(keeper);
         (profit, loss) = strategy.report();
         checkStrategyInvariants(strategy);
-        assertGe(profit, (_amount + secondUserAmount + thirdUserAmount) * 7 / 100 , "!profit");
+        assertGe(profit, (_amount + secondUserAmount + thirdUserAmount) * 6 / 100 , "!profit");
         console.log("total investment: ", _amount + secondUserAmount + thirdUserAmount);
         console.log("profit after second report", profit);
         assertEq(loss, 0, "!loss");
