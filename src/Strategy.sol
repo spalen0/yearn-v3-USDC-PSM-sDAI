@@ -20,7 +20,7 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
     address private constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address private constant SDAI = 0x83F20F44975D03b1b09e64809B757c47f942BEeA;
     address private constant PSM = 0xf6e72Db5454dd049d0788e411b06CfAF16853042; //LITE-PSM
-    address private constant gemJoin = 0x0A59649758aa4d66E25f08Dd01271e891fe52199;
+    address private constant pocket = 0x37305B1cD40574E4C5Ce33f8e8306Be057fD7341;
     address private constant pool = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
     
     uint256 private constant SCALER = 1e12;
@@ -38,7 +38,6 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
 
         //approvals:
         ERC20(_asset).safeApprove(PSM, type(uint).max); //approve the PSM
-        ERC20(_asset).safeApprove(gemJoin, type(uint).max); //approve the gemJoin of the PSM
         ERC20(DAI).safeApprove(PSM, type(uint).max); //approve the PSM
         ERC20(DAI).safeApprove(SDAI, type(uint).max);
     }
@@ -69,7 +68,7 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
         if (IPSM(PSM).tout() >= maxAcceptableFeeOutPSM) {
             return _balanceAsset() + asset.balanceOf(pool);
         } else {
-            return _balanceAsset() + asset.balanceOf(gemJoin);
+            return _balanceAsset() + asset.balanceOf(pocket);
         }
     }
 
@@ -135,6 +134,7 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
                 EMERGENCY
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice In case of an emergencyWithdraw with fees, management needs to call a report right after (ideally bundled).
     function _emergencyWithdraw(uint256 _amount) internal override {
         uint256 currentBalance = _balanceSDAI();
         if (_amount > currentBalance) {
@@ -143,7 +143,7 @@ contract Strategy is BaseHealthCheck, UniswapV3Swapper {
         _freeFunds(ISDAI(SDAI).convertToAssets(_amount) / SCALER);
     }
 
-    /// @notice If possible, always call emergencyWithdraw() instead of this. This function is to be called only if emergencyWithdraw() were to ever revert: In that case, management needs to first shutdown the strategy, then call emergencyWithdrawDirect() with off-chain calculated amounts, and then immediately call a report.
+    /// @notice If possible, always call emergencyWithdraw() instead of this. This function is to be called only if emergencyWithdraw() were to ever revert: In that case, management needs to first shutdown the strategy, then call emergencyWithdrawDirect() with off-chain calculated amounts, and then immediately call a report. In case of an emergencyWithdraw with fees, management needs to call a report right after (ideally bundled).
     /// @param _sharesSDAI the amount of sDAI shares that should be redeemed.
     /// @param _usePSM Set this to true to use the PSM to swap (preferred). Otherwise this will use Uniswap to swap (emergency).
     /// @param _swapAmount For the PSM this is the USDC amount out. For Uniswap this is the DAI amount to be swapped to USDC out.

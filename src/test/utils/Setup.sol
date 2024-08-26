@@ -44,8 +44,7 @@ contract Setup is ExtendedTest, IEvents {
     bool public forceProfit = false; //to be used with minimum deposit contracts
 
     // Fuzz from $0.01 of 1e6 stable coins up to 1 billion of a 1e18 coin
-    //uint256 public maxFuzzAmount = 150e6 * 1e6;
-    uint256 public maxFuzzAmount = 3e6 * 1e6;
+    uint256 public maxFuzzAmount = 150e6 * 1e6;
     uint256 public minFuzzAmount = 1e6;
 
     // Default prfot max unlock time is set for 10 days
